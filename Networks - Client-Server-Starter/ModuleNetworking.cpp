@@ -90,7 +90,7 @@ bool ModuleNetworking::preUpdate()
 				sockaddr_in in;
 				int len = sizeof(in);
 				SOCKET ret_sock = accept(s, (sockaddr*)&in, &len);
-				sockets.push_back(ret_sock);
+				addSocket(ret_sock);
 				
 				onSocketConnected(ret_sock, in);
 			}
