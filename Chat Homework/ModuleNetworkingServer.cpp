@@ -40,7 +40,7 @@ bool ModuleNetworkingServer::start(int port)
 	// - Enter in listen mode
 
 	int backlog = 8; // Max allowed connections
-	listen(listenSocket, backlog);
+	err_ret = listen(listenSocket, backlog);
 	if (err_ret == SOCKET_ERROR)
 	{
 		LOG("Error Setting Max Connections.");
@@ -123,14 +123,23 @@ void ModuleNetworkingServer::onSocketConnected(SOCKET socket, const sockaddr_in 
 	connectedSockets.push_back(connectedSocket);
 }
 
-void ModuleNetworkingServer::onSocketReceivedData(SOCKET socket, byte * data)
+void ModuleNetworkingServer::onSocketReceivedData(SOCKET socket, const InputMemoryStream& packet)
 {
-	// Set the player name of the corresponding connected socket proxy
-	for (auto &connectedSocket : connectedSockets)
+	ClientMessage clientMessage;
+	packet >> clientMessage;
+
+	if (clientMessage == ClientMessage::Hello)
 	{
-		if (connectedSocket.socket == socket)
+		std::string playerName;
+		packet >> playerName;
+
+		// Set the player name of the corresponding connected socket proxy
+		for (auto &connectedSocket : connectedSockets)
 		{
-			connectedSocket.playerName = (const char *)data;
+			if (connectedSocket.socket == socket)
+			{
+				connectedSocket.playerName = playerName;
+			}
 		}
 	}
 }

@@ -76,7 +76,7 @@ bool ModuleNetworking::preUpdate()
 	timeout.tv_usec = 0;
 
 	err_ret = select(0, &readSet, &writeSet, nullptr, &timeout);
-	if (err_ret == 0)
+	if (err_ret == SOCKET_ERROR)
 	{
 		LOG("Error Selecting Sockets to read Data.");
 		return false;
@@ -117,9 +117,13 @@ bool ModuleNetworking::preUpdate()
 				// Communicate detected disconnections to the subclass using the callback
 				// onSocketDisconnected().
 
-				err_ret = recv(s, (char*)&incomingDataBuffer[0],incomingDataBufferSize,0);
+				InputMemoryStream packet;
+				err_ret = recv(s, packet.GetBufferPtr(),packet.GetCapacity(),0);
 				if (err_ret > 0)
-					onSocketReceivedData(s, &incomingDataBuffer[0]);
+				{
+					packet.SetSize((uint32)err_ret);
+					onSocketReceivedData(s, packet);
+				}
 				else
 				{
 					if (err_ret == SOCKET_ERROR)
@@ -162,4 +166,16 @@ bool ModuleNetworking::cleanUp()
 void ModuleNetworking::addSocket(SOCKET socket)
 {
 	sockets.push_back(socket);
+}
+
+// Packet Sending Properly
+bool ModuleNetworking::sendPacket(const OutputMemoryStream & packet, SOCKET socket)
+{
+	int err_ret = send(socket, packet.GetBufferPtr(), packet.GetSize(), 0);
+	if (err_ret == SOCKET_ERROR)
+	{
+		LOG("Error Sending Packet.");
+		return false;
+	}
+	return true;
 }

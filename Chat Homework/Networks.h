@@ -4,7 +4,6 @@
 
 #pragma comment (lib, "D3D11.lib")
 
-
 ////////////////////////////////////////////////////////////////////////
 // MACROS
 ////////////////////////////////////////////////////////////////////////
@@ -185,6 +184,8 @@ inline float fractionalPart(float number)
 // FRAMEWORK HEADERS
 ////////////////////////////////////////////////////////////////////////
 
+#include "Messages.h"
+#include "MemoryStream.h"
 #include "Module.h"
 #include "ModuleNetworking.h"
 #include "ModuleNetworkingClient.h"
@@ -204,3 +205,4 @@ inline float fractionalPart(float number)
 #include "ScreenMainMenu.h"
 #include "ScreenGame.h"
 #include "Application.h"
+

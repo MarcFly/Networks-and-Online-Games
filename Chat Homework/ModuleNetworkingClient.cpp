@@ -58,7 +58,19 @@ bool ModuleNetworkingClient::update()
 	if (state == ClientState::Start)
 	{
 		// TODO(jesus): Send the player name to the server
-		send(own_socket, playerName.c_str(), playerName.size(), 0);
+		//send(own_socket, playerName.c_str(), playerName.size(), 0);
+		OutputMemoryStream packet;
+		packet << ClientMessage::Hello;
+		packet << playerName;
+		if (sendPacket(packet, own_socket))
+		{
+			state = ClientState::Logging;
+		}
+		else
+		{
+			disconnect();
+			state = ClientState::Stopped;
+		}
 	}
 
 	return true;
@@ -66,6 +78,8 @@ bool ModuleNetworkingClient::update()
 
 bool ModuleNetworkingClient::gui()
 {
+	bool sdw = true;
+	ImGui::ShowDemoWindow(&sdw);
 	if (state != ClientState::Stopped)
 	{
 		// NOTE(jesus): You can put ImGui code here for debugging purposes
@@ -83,7 +97,7 @@ bool ModuleNetworkingClient::gui()
 	return true;
 }
 
-void ModuleNetworkingClient::onSocketReceivedData(SOCKET socket, byte * data)
+void ModuleNetworkingClient::onSocketReceivedData(SOCKET socket, const InputMemoryStream& packet)
 {
 	state = ClientState::Stopped;
 }
