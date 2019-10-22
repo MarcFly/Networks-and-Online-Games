@@ -12,7 +12,7 @@ bool  ModuleNetworkingClient::start(const char * serverAddressStr, int serverPor
 	err_ret = own_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (err_ret == SOCKET_ERROR)
 	{
-		LOG("Error Creating Client Socket.");
+		reportError("Error Creating Client Socket.");
 		return false;
 	}
 	// - Create the remote address object
@@ -24,7 +24,7 @@ bool  ModuleNetworkingClient::start(const char * serverAddressStr, int serverPor
 	inet_pton(AF_INET, remoteAddrStr, &remoteAddr.sin_addr);
 	if (err_ret == SOCKET_ERROR)
 	{
-		LOG("Error Setting Client Addres.");
+		reportError("Error Setting Client Addres.");
 		return false;
 	}
 	// - Connect to the remote address
@@ -39,7 +39,7 @@ bool  ModuleNetworkingClient::start(const char * serverAddressStr, int serverPor
 	}
 	else
 	{
-		if(err_ret == -1) LOG("Error Connecting to Server.");
+		if(err_ret == -1) reportError("Error Connecting to Server.");
 		state = ClientState::Stopped;
 	}
 
@@ -89,6 +89,11 @@ bool ModuleNetworkingClient::gui()
 		ImVec2 texSize(400.0f, 400.0f * tex->height / tex->width);
 		ImGui::Image(tex->shaderResource, texSize);
 
+		if (ImGui::Button("Disconnect"))
+		{
+			state = ClientState::Stopped;
+		}
+		ImGui::SameLine();
 		ImGui::Text("%s connected to the server...", playerName.c_str());
 
 		ImGui::End();

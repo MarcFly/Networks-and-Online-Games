@@ -20,7 +20,7 @@ bool ModuleNetworkingServer::start(int port)
 	err_ret = setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&enable, sizeof(int));
 	if (err_ret == SOCKET_ERROR)
 	{
-		LOG("Error setting up Server Socket.");
+		reportError("Error setting up Server Socket.");
 		return false;
 	}
 	// - Bind the socket to a local interface
@@ -33,7 +33,7 @@ bool ModuleNetworkingServer::start(int port)
 	err_ret = bind(listenSocket, (const sockaddr*)&bindAddr, sizeof(bindAddr));
 	if (err_ret == SOCKET_ERROR)
 	{
-		LOG("Error Binding Server Address.");
+		reportError("Error Binding Server Address.");
 		return false;
 	}
 
@@ -43,7 +43,7 @@ bool ModuleNetworkingServer::start(int port)
 	err_ret = listen(listenSocket, backlog);
 	if (err_ret == SOCKET_ERROR)
 	{
-		LOG("Error Setting Max Connections.");
+		reportError("Error Setting Max Connections.");
 		return false;
 	}
 	// - Add the listenSocket to the managed list of sockets using addSocket()

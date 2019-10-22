@@ -1,10 +1,7 @@
 #include "Networks.h"
 #include "ModuleNetworking.h"
 
-
 static uint8 NumModulesUsingWinsock = 0;
-
-
 
 void ModuleNetworking::reportError(const char* inOperationDesc)
 {
@@ -78,7 +75,7 @@ bool ModuleNetworking::preUpdate()
 	err_ret = select(0, &readSet, &writeSet, nullptr, &timeout);
 	if (err_ret == SOCKET_ERROR)
 	{
-		LOG("Error Selecting Sockets to read Data.");
+		reportError("Error Selecting Sockets to read Data.");
 		return false;
 	}
 	// TODO(jesus): for those sockets selected, check wheter or not they are
@@ -102,7 +99,7 @@ bool ModuleNetworking::preUpdate()
 				SOCKET ret_sock = accept(s, (sockaddr*)&in, &len);
 				if (ret_sock == INVALID_SOCKET)
 				{
-					LOG("Error Accepting Incoming Connection.");
+					reportError("Error Accepting Incoming Connection.");
 					continue;
 				}
 				addSocket(ret_sock);
@@ -131,7 +128,7 @@ bool ModuleNetworking::preUpdate()
 				{
 					if (err_ret == SOCKET_ERROR)
 					{
-						LOG("Error Receiving data from a socket.");
+						reportError("Error Receiving data from a socket.");
 					}
 					connected.pop_back();
 					onSocketDisconnected(s);
