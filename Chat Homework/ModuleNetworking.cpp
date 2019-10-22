@@ -84,9 +84,12 @@ bool ModuleNetworking::preUpdate()
 	// TODO(jesus): for those sockets selected, check wheter or not they are
 	// a listen socket or a standard socket and perform the corresponding
 	
+	std::vector<SOCKET> connected;
 
-	for (SOCKET s : sockets)
+	for (int i= 0; i < sockets.size(); ++i)
 	{
+		SOCKET s = sockets[i];
+		connected.push_back(s);
 		if (FD_ISSET(s, &readSet))
 		{
 			if (isListenSocket(s))
@@ -130,7 +133,7 @@ bool ModuleNetworking::preUpdate()
 					{
 						LOG("Error Receiving data from a socket.");
 					}
-
+					connected.pop_back();
 					onSocketDisconnected(s);
 				}
 					
@@ -141,6 +144,8 @@ bool ModuleNetworking::preUpdate()
 
 	// TODO(jesus): Finally, remove all disconnected sockets from the list
 	// of managed sockets.
+
+	sockets.swap(connected);
 
 	return true;
 }
