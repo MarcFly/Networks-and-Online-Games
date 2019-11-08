@@ -58,7 +58,6 @@ bool ModuleNetworkingClient::update()
 	if (state == ClientState::Start)
 	{
 		// TODO(jesus): Send the player name to the server
-		//send(own_socket, playerName.c_str(), playerName.size(), 0);
 		OutputMemoryStream packet;
 		packet << ClientMessage::Hello;
 		packet << playerName;
@@ -71,6 +70,10 @@ bool ModuleNetworkingClient::update()
 			disconnect();
 			state = ClientState::Stopped;
 		}
+	}
+	if (state == ClientState::Logging)
+	{
+		
 	}
 
 	return true;
@@ -91,11 +94,31 @@ bool ModuleNetworkingClient::gui()
 
 		if (ImGui::Button("Disconnect"))
 		{
+			disconnect();
 			state = ClientState::Stopped;
 		}
 		ImGui::SameLine();
-		ImGui::Text("%s connected to the server...", playerName.c_str());
 
+		ImGui::Text("%s connected to the server...", playerName.c_str());
+		ImGui::Separator();
+		ImGui::BeginGroup();
+		{
+			for (int i = 0; i < messages.size(); ++i)
+				ImGui::Text(messages[i].c_str());
+			
+		}ImGui::EndGroup();
+
+		ImGui::Separator();
+		ImGui::InputText("", curr_msg, 512);
+		ImGui::SameLine();
+		if (ImGui::Button("Send"))
+		{
+			OutputMemoryStream packet;
+			std::string data(curr_msg);
+			packet << ClientMessage::Data;
+			packet << data;
+			sendPacket(packet, own_socket);
+		}
 		ImGui::End();
 	}
 
@@ -104,7 +127,28 @@ bool ModuleNetworkingClient::gui()
 
 void ModuleNetworkingClient::onSocketReceivedData(SOCKET socket, const InputMemoryStream& packet)
 {
-	state = ClientState::Stopped;
+
+	ClientMessage type;
+	packet >> type;
+	std::string message;
+	switch (type) 
+	{
+	case ClientMessage::Error:
+		packet >> message;
+		reportError(message.c_str());
+		state = ClientState::Stopped;
+		break;
+
+	case ClientMessage::Data:
+		packet >> message;
+		messages.push_back(message);
+		break;
+
+	case ClientMessage::Command:
+		break;
+	default:
+		state = ClientState::Stopped;
+	}
 }
 
 void ModuleNetworkingClient::onSocketDisconnected(SOCKET socket)

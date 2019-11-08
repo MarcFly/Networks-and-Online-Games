@@ -54,6 +54,9 @@ private:
 	sockaddr_in serverAddress = {};
 	SOCKET own_socket = INVALID_SOCKET;
 
+	std::vector<std::string> messages;
+
 	std::string playerName;
+	char curr_msg[512];
 };
 

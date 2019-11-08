@@ -136,10 +136,32 @@ void ModuleNetworkingServer::onSocketReceivedData(SOCKET socket, const InputMemo
 		// Set the player name of the corresponding connected socket proxy
 		for (auto &connectedSocket : connectedSockets)
 		{
-			if (connectedSocket.socket == socket)
+			if (connectedSocket.playerName == playerName)
+			{
+				OutputMemoryStream packet;
+				packet << ClientMessage::Error;
+				packet << "PlayerName already exists.\0";
+				sendPacket(packet, socket);
+				onSocketDisconnected(socket);
+				break;
+			}
+			else if (connectedSocket.socket == socket)
 			{
 				connectedSocket.playerName = playerName;
+				break;
 			}
+		}
+	}
+	else if (clientMessage == ClientMessage::Data)
+	{
+		std::string message;
+		packet >> message;
+		OutputMemoryStream outPacket;
+		outPacket << ServerMessage::Data;
+		outPacket << message;
+		for (auto& connectedSocket : connectedSockets)
+		{
+			sendPacket(outPacket, connectedSocket.socket);
 		}
 	}
 }
