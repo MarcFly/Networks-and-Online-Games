@@ -180,3 +180,9 @@ void ModuleNetworkingServer::onSocketDisconnected(SOCKET socket)
 	}
 }
 
+void ModuleNetworkingServer::HandleCommands(SOCKET socket, const InputMemoryStream& packet)
+{
+	
+}
+
+

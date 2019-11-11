@@ -40,7 +40,7 @@ private:
 
 	void onSocketDisconnected(SOCKET socket) override;
 
-
+	void HandleCommands(SOCKET socket, const InputMemoryStream& packet) override;
 
 	//////////////////////////////////////////////////////////////////////
 	// State

@@ -19,3 +19,10 @@ enum class ServerMessage
 	Error
 };
 
+enum class Commands
+{
+	Whisper,
+	Kick,
+	Ban
+};
+

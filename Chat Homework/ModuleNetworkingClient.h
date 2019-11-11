@@ -36,7 +36,9 @@ private:
 
 	void onSocketDisconnected(SOCKET socket) override;
 
+	void HandleCommands(SOCKET socket, const InputMemoryStream& packet) override;
 
+	void PrepareCommands(OutputMemoryStream& packet);
 
 	//////////////////////////////////////////////////////////////////////
 	// Client state
@@ -57,6 +59,6 @@ private:
 	std::vector<std::string> messages;
 
 	std::string playerName;
-	char curr_msg[512];
+	std::vector<char> curr_msg;
 };
 

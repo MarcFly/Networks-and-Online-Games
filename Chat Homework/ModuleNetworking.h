@@ -25,6 +25,8 @@ private:
 
 	virtual void onSocketReceivedData(SOCKET s, const InputMemoryStream&  data) = 0;
 
+	virtual void HandleCommands(SOCKET s, const InputMemoryStream& data) = 0;
+
 	virtual void onSocketDisconnected(SOCKET s) = 0;
 
 public:

@@ -43,7 +43,7 @@ bool  ModuleNetworkingClient::start(const char * serverAddressStr, int serverPor
 		state = ClientState::Stopped;
 	}
 
-	
+	curr_msg.resize(512);
 
 	return true;
 }
@@ -109,14 +109,24 @@ bool ModuleNetworkingClient::gui()
 		}ImGui::EndGroup();
 
 		ImGui::Separator();
-		ImGui::InputText("", curr_msg, 512);
+		ImGui::InputText("", curr_msg.data(), 512);
 		ImGui::SameLine();
 		if (ImGui::Button("Send"))
 		{
 			OutputMemoryStream packet;
-			std::string data(curr_msg);
-			packet << ClientMessage::Data;
-			packet << data;
+
+			if (curr_msg[0] == '/' || curr_msg[0] == '\\')
+			{
+				packet << ClientMessage::Command;
+				PrepareCommands(packet);
+			}
+			else
+			{
+				packet << ClientMessage::Data;
+				std::string data(curr_msg.data());
+				packet << data;
+			}
+		
 			sendPacket(packet, own_socket);
 		}
 		ImGui::End();
@@ -145,6 +155,7 @@ void ModuleNetworkingClient::onSocketReceivedData(SOCKET socket, const InputMemo
 		break;
 
 	case ClientMessage::Command:
+		HandleCommands(socket, packet);
 		break;
 	default:
 		state = ClientState::Stopped;
@@ -156,3 +167,34 @@ void ModuleNetworkingClient::onSocketDisconnected(SOCKET socket)
 	state = ClientState::Stopped;
 }
 
+void ModuleNetworkingClient::HandleCommands(SOCKET socket, const InputMemoryStream& packet)
+{
+
+}
+
+void ModuleNetworkingClient::PrepareCommands(OutputMemoryStream& packet)
+{
+	std::string interpret;
+	interpret.append(curr_msg.data(), curr_msg.size());
+	int pos = interpret.find_first_of(' ');
+	interpret.clear();
+	interpret.append(&curr_msg[1], pos-1);
+	if (interpret.compare("whisper") == 0)
+	{
+		packet << Commands::Whisper;
+		interpret.clear();
+		interpret.append(9, curr_msg[8]);
+		packet << interpret;
+	}
+	else if (interpret.erase(4, std::string::npos).compare("kick") == 0)
+	{
+		packet << Commands::Kick;
+		interpret.clear();
+		interpret.append(&curr_msg[6] ,512 - 7);
+		packet << interpret;
+	}
+	else if (interpret.erase(3, std::string::npos).compare("ban") == 0)
+	{
+		packet << Commands::Ban;
+	}
+}
