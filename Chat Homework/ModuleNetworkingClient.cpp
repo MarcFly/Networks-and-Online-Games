@@ -43,7 +43,7 @@ bool  ModuleNetworkingClient::start(const char * serverAddressStr, int serverPor
 		state = ClientState::Stopped;
 	}
 
-	curr_msg.resize(512);
+	curr_msg.resize(80);
 
 	return true;
 }
@@ -109,7 +109,7 @@ bool ModuleNetworkingClient::gui()
 		}ImGui::EndGroup();
 
 		ImGui::Separator();
-		ImGui::InputText("", curr_msg.data(), 512);
+		ImGui::InputText("", curr_msg.data(), 80);
 		ImGui::SameLine();
 		if (ImGui::Button("Send"))
 		{
@@ -169,7 +169,14 @@ void ModuleNetworkingClient::onSocketDisconnected(SOCKET socket)
 
 void ModuleNetworkingClient::HandleCommands(SOCKET socket, const InputMemoryStream& packet)
 {
+	Commands type;
+	packet >> type;
 
+	if (type == Commands::Kick)
+	{
+		state = ClientState::Stopped;
+		reportError("You have been kicked from the server.");
+	}
 }
 
 void ModuleNetworkingClient::PrepareCommands(OutputMemoryStream& packet)
@@ -183,14 +190,20 @@ void ModuleNetworkingClient::PrepareCommands(OutputMemoryStream& packet)
 	{
 		packet << Commands::Whisper;
 		interpret.clear();
-		interpret.append(9, curr_msg[8]);
+		interpret.append(&curr_msg[9],80 - 10);
+		int pos = interpret.find_first_not_of(' ',9);
+		interpret.clear();
+		interpret.append(&curr_msg[pos], 80 - (pos + 1));
 		packet << interpret;
 	}
 	else if (interpret.erase(4, std::string::npos).compare("kick") == 0)
 	{
 		packet << Commands::Kick;
 		interpret.clear();
-		interpret.append(&curr_msg[6] ,512 - 7);
+		interpret.append(&curr_msg[6] ,80 - 7);
+		int pos = interpret.find_first_not_of(' ',6);
+		interpret.clear();
+		interpret.append(&curr_msg[pos], 80 - (pos + 1));
 		packet << interpret;
 	}
 	else if (interpret.erase(3, std::string::npos).compare("ban") == 0)

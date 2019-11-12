@@ -164,6 +164,10 @@ void ModuleNetworkingServer::onSocketReceivedData(SOCKET socket, const InputMemo
 			sendPacket(outPacket, connectedSocket.socket);
 		}
 	}
+	else if (clientMessage == ClientMessage::Command)
+	{
+		HandleCommands(socket, packet);
+	}
 }
 
 void ModuleNetworkingServer::onSocketDisconnected(SOCKET socket)
@@ -182,7 +186,50 @@ void ModuleNetworkingServer::onSocketDisconnected(SOCKET socket)
 
 void ModuleNetworkingServer::HandleCommands(SOCKET socket, const InputMemoryStream& packet)
 {
-	
+	Commands type;
+	packet >> type;
+	std::string msg;
+	packet >> msg;
+	const char* check = strpbrk(msg.c_str(), " ");
+	int pos = (check == nullptr) ? 0 : msg.find_first_of(' ',0);
+	std::string base_val(msg.c_str(), pos);
+
+	if (type == Commands::Whisper)
+	{		
+		for (auto it : connectedSockets)
+		{
+			if (it.playerName.compare(base_val) == 0)
+			{
+				OutputMemoryStream packet_send;
+				packet_send << ServerMessage::Data;
+				msg.erase(0, pos);
+				packet_send << msg;
+				sendPacket(packet_send, it.socket);
+				sendPacket(packet_send, socket);
+				break;
+			}
+		}
+	}
+	else if (type == Commands::Kick)
+	{
+		OutputMemoryStream packet_send;
+		packet_send << ServerMessage::Command;
+		packet_send << Commands::Kick;
+
+		for (auto it : connectedSockets)
+		{
+			if (it.playerName.compare(base_val))
+			{
+				sendPacket(packet_send, it.socket);
+				break;
+			}
+		}
+		
+	}
+	else if (type == Commands::Ban)
+	{
+		
+	}
 }
 
 
