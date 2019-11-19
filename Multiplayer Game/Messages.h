@@ -4,7 +4,8 @@ enum class ClientMessage
 {
 	Hello,
 	Input,
-	Ping
+	Ping,
+	Bye
 };
 
 enum class ServerMessage
@@ -12,5 +13,6 @@ enum class ServerMessage
 	Welcome,
 	Unwelcome,
 	Replication,
-	Ping
+	Ping,
+	Disconnected
 };

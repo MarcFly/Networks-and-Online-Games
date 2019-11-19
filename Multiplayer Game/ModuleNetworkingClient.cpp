@@ -127,7 +127,18 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 	}
 	else if (state == ClientState::Playing)
 	{
+		// Ping every PING_INTERVAL_SECONDS
+
 		// TODO(jesus): Handle incoming messages from server
+
+
+		// TIMEOUT MESSAGE
+		if (message == ServerMessage::Unwelcome)
+		{
+			WLOG("ModuleNetworkingClient::onPacketReceived() - Unwelcome from server :-(");
+			disconnect();
+		}
+		
 	}
 }
 
@@ -195,6 +206,20 @@ void ModuleNetworkingClient::onUpdate()
 	{
 		App->modRender->cameraPosition = playerGameObject->position;
 	}
+
+	secondsSinceLastPing += Time.deltaTime;
+	if (secondsSinceLastPing > PING_INTERVAL_SECONDS)
+	{
+		OutputMemoryStream ping;
+		ping << ClientMessage::Ping;
+		sendPacket(ping, serverAddress);
+		secondsSinceLastPing = 0;
+	}
+
+	if (Time.time - lastPacketReceivedTime > DISCONNECT_TIMEOUT_SECONDS)
+	{
+		TriggerBye();
+	}
 }
 
 void ModuleNetworkingClient::onConnectionReset(const sockaddr_in & fromAddress)
@@ -219,4 +244,11 @@ void ModuleNetworkingClient::onDisconnect()
 	}
 
 	App->modRender->cameraPosition = {};
+}
+
+void ModuleNetworkingClient::TriggerBye()
+{
+	OutputMemoryStream packet;
+	packet << ClientMessage::Bye;
+	sendPacket(packet, serverAddress);
 }

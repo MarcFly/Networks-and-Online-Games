@@ -34,7 +34,7 @@ private:
 
 	void onDisconnect() override;
 
-
+	void TriggerBye() override;
 
 	//////////////////////////////////////////////////////////////////////
 	// Client proxies
@@ -56,7 +56,8 @@ private:
 		InputController gamepad;
 	};
 
-	ClientProxy clientProxies[MAX_CLIENTS];
+	std::vector<ClientProxy> clientProxies;
+	std::vector<ClientProxy> proxyStillConnected;
 
 	ClientProxy * createClientProxy();
 

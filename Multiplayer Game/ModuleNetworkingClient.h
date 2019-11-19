@@ -36,7 +36,7 @@ private:
 
 	void onDisconnect() override;
 
-
+	void TriggerBye() override;
 
 	//////////////////////////////////////////////////////////////////////
 	// Client state

@@ -158,6 +158,7 @@ bool ModuleNetworking::gui()
 		ImGui::Text(" - # Networked objects: %u", App->modLinkingContext->getNetworkGameObjectsCount());
 
 		if (ImGui::Button("Disconnect")) {
+			void TriggerBye();
 			disconnect();
 		}
 

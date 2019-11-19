@@ -66,6 +66,8 @@ private:
 	uint32 receivedPacketsCount = 0;
 	InputMemoryStream inPacket;
 
+	virtual void TriggerBye() = 0;
+
 	void processIncomingPackets();
 
 	virtual void onStart() = 0;

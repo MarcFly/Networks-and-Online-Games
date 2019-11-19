@@ -60,7 +60,7 @@ void ModuleNetworkingServer::onGui()
 		{
 			int count = 0;
 
-			for (int i = 0; i < MAX_CLIENTS; ++i)
+			for (int i = 0; i < clientProxies.size(); ++i)
 			{
 				if (clientProxies[i].name != "")
 				{
@@ -178,16 +178,19 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 				}
 			}
 		}
-
+		
 		if (proxy != nullptr)
 		{
 			proxy->lastPacketReceivedTime = Time.time;
+
+			proxy->connected = !(message == ClientMessage::Bye);
 		}
 	}
 }
 
 void ModuleNetworkingServer::onUpdate()
 {
+	
 	if (state == ServerState::Listening)
 	{
 		// Replication
@@ -196,13 +199,50 @@ void ModuleNetworkingServer::onUpdate()
 			if (clientProxy.connected)
 			{
 				OutputMemoryStream packet;
+				clientProxy.connected = ((Time.time - clientProxy.lastPacketReceivedTime) <= DISCONNECT_TIMEOUT_SECONDS);
+			
+				proxyStillConnected.push_back(clientProxy);
 				packet << ServerMessage::Replication;
 
 				// TODO(jesus): If the replication interval passed and the replication manager of this proxy
 				//              has pending data, write and send a replication packet to this client.
+
+
+				// Ping Sending
+				secondsSinceLastPing += Time.deltaTime;
+				if (secondsSinceLastPing > PING_INTERVAL_SECONDS)
+				{
+					OutputMemoryStream ping;
+					ping << ServerMessage::Ping;
+					sendPacket(ping, clientProxy.address);
+				}
+			}
+			else
+			{
+				OutputMemoryStream packet;
+				packet << ServerMessage::Unwelcome;
+				sendPacket(packet, clientProxy.address);
 			}
 		}
+
+		proxyStillConnected.swap(clientProxies);
+		proxyStillConnected.clear();
+
+		secondsSinceLastPing = (secondsSinceLastPing > PING_INTERVAL_SECONDS) ? 0 : secondsSinceLastPing + Time.deltaTime;
 	}
+}
+
+void ModuleNetworkingServer::TriggerBye()
+{
+	proxyStillConnected.clear();
+	for (ClientProxy &clientProxy : clientProxies)
+	{
+		OutputMemoryStream packet;
+		packet << ServerMessage::Disconnected;
+		packet << std::string("Server Shutdown");
+		sendPacket(packet, clientProxy.address);
+	}
+	proxyStillConnected.swap(clientProxies);
 }
 
 void ModuleNetworkingServer::onConnectionReset(const sockaddr_in & fromAddress)
@@ -213,7 +253,7 @@ void ModuleNetworkingServer::onConnectionReset(const sockaddr_in & fromAddress)
 	if (proxy)
 	{
 		// Notify game object deletion to replication managers
-		for (int i = 0; i < MAX_CLIENTS; ++i)
+		for (int i = 0; i < clientProxies.size(); ++i)
 		{
 			if (clientProxies[i].connected && proxy->clientId != clientProxies[i].clientId)
 			{
@@ -263,7 +303,7 @@ void ModuleNetworkingServer::onDisconnect()
 ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::getClientProxy(const sockaddr_in &clientAddress)
 {
 	// Try to find the client
-	for (int i = 0; i < MAX_CLIENTS; ++i)
+	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].address.sin_addr.S_un.S_addr == clientAddress.sin_addr.S_un.S_addr &&
 			clientProxies[i].address.sin_port == clientAddress.sin_port)
@@ -277,14 +317,20 @@ ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::getClientProxy(con
 
 ModuleNetworkingServer::ClientProxy * ModuleNetworkingServer::createClientProxy()
 {
+	if (clientProxies.size() <= MAX_CLIENTS)
+	{
+		clientProxies.push_back(ClientProxy());
+		return &clientProxies[clientProxies.size()-1];
+	}
+	/*
 	// If it does not exist, pick an empty entry
-	for (int i = 0; i < MAX_CLIENTS; ++i)
+	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (!clientProxies[i].connected)
 		{
 			return &clientProxies[i];
 		}
-	}
+	}*/
 
 	return nullptr;
 }
@@ -329,7 +375,7 @@ GameObject * ModuleNetworkingServer::spawnPlayer(ClientProxy &clientProxy, uint8
 	App->modLinkingContext->registerNetworkGameObject(clientProxy.gameObject);
 
 	// Notify all client proxies' replication manager to create the object remotely
-	for (int i = 0; i < MAX_CLIENTS; ++i)
+	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
@@ -358,7 +404,7 @@ GameObject * ModuleNetworkingServer::spawnBullet(GameObject *parent)
 	App->modLinkingContext->registerNetworkGameObject(gameObject);
 
 	// Notify all client proxies' replication manager to create the object remotely
-	for (int i = 0; i < MAX_CLIENTS; ++i)
+	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
@@ -377,7 +423,7 @@ GameObject * ModuleNetworkingServer::spawnBullet(GameObject *parent)
 void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject)
 {
 	// Notify all client proxies' replication manager to destroy the object remotely
-	for (int i = 0; i < MAX_CLIENTS; ++i)
+	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
@@ -395,7 +441,7 @@ void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject)
 void ModuleNetworkingServer::updateNetworkObject(GameObject * gameObject)
 {
 	// Notify all client proxies' replication manager to destroy the object remotely
-	for (int i = 0; i < MAX_CLIENTS; ++i)
+	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
