@@ -124,6 +124,7 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 			WLOG("ModuleNetworkingClient::onPacketReceived() - Unwelcome from server :-(");
 			disconnect();
 		}
+		
 	}
 	else if (state == ClientState::Playing)
 	{
@@ -137,6 +138,11 @@ void ModuleNetworkingClient::onPacketReceived(const InputMemoryStream &packet, c
 		{
 			WLOG("ModuleNetworkingClient::onPacketReceived() - Unwelcome from server :-(");
 			disconnect();
+		}
+		else if (message == ServerMessage::Replication)
+		{
+			WLOG("ModuleNetworkingClient::onPacketReceiver() - Start replication Bitch!");
+			MngCl.read(packet);
 		}
 		
 	}

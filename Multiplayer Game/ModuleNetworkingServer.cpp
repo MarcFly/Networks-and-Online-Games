@@ -48,7 +48,6 @@ void ModuleNetworkingServer::onGui()
 		ImGui::Text("Connection checking info:");
 		ImGui::Text(" - Ping interval (s): %f", PING_INTERVAL_SECONDS);
 		ImGui::Text(" - Disconnection timeout (s): %f", DISCONNECT_TIMEOUT_SECONDS);
-
 		ImGui::Separator();
 
 		ImGui::Text("Replication");
@@ -190,7 +189,6 @@ void ModuleNetworkingServer::onPacketReceived(const InputMemoryStream &packet, c
 
 void ModuleNetworkingServer::onUpdate()
 {
-	
 	if (state == ServerState::Listening)
 	{
 		// Replication
@@ -206,10 +204,15 @@ void ModuleNetworkingServer::onUpdate()
 
 				// TODO(jesus): If the replication interval passed and the replication manager of this proxy
 				//              has pending data, write and send a replication packet to this client.
-
+				if (rDITimer > replicationDeliveryIntervalSeconds)
+				{
+					// Packet write and such
+					OutputMemoryStream repPacket;
+					MngSrv.write(repPacket);
+					sendPacket(repPacket, clientProxy.address);
+				}
 
 				// Ping Sending
-				secondsSinceLastPing += Time.deltaTime;
 				if (secondsSinceLastPing > PING_INTERVAL_SECONDS)
 				{
 					OutputMemoryStream ping;
@@ -229,7 +232,15 @@ void ModuleNetworkingServer::onUpdate()
 		proxyStillConnected.clear();
 
 		secondsSinceLastPing = (secondsSinceLastPing > PING_INTERVAL_SECONDS) ? 0 : secondsSinceLastPing + Time.deltaTime;
+
+		if (rDITimer > replicationDeliveryIntervalSeconds)
+		{
+			MngSrv.Commands.clear();
+			rDITimer = 0;
+		}
+		rDITimer += Time.deltaTime;
 	}
+	
 }
 
 void ModuleNetworkingServer::TriggerBye()
@@ -253,13 +264,15 @@ void ModuleNetworkingServer::onConnectionReset(const sockaddr_in & fromAddress)
 	if (proxy)
 	{
 		// Notify game object deletion to replication managers
+		MngSrv.destroy(proxy->gameObject->networkId);
+		/*
 		for (int i = 0; i < clientProxies.size(); ++i)
 		{
 			if (clientProxies[i].connected && proxy->clientId != clientProxies[i].clientId)
 			{
 				// TODO(jesus): Notify this proxy's replication manager about the destruction of this player's game object
 			}
-		}
+		}*/
 
 		// Unregister the network identity
 		App->modLinkingContext->unregisterNetworkGameObject(proxy->gameObject);
@@ -375,13 +388,15 @@ GameObject * ModuleNetworkingServer::spawnPlayer(ClientProxy &clientProxy, uint8
 	App->modLinkingContext->registerNetworkGameObject(clientProxy.gameObject);
 
 	// Notify all client proxies' replication manager to create the object remotely
+	MngSrv.create(clientProxy.gameObject->networkId);
+	/*
 	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
 			// TODO(jesus): Notify this proxy's replication manager about the creation of this game object
 		}
-	}
+	}*/
 
 	return clientProxy.gameObject;
 }
@@ -404,13 +419,15 @@ GameObject * ModuleNetworkingServer::spawnBullet(GameObject *parent)
 	App->modLinkingContext->registerNetworkGameObject(gameObject);
 
 	// Notify all client proxies' replication manager to create the object remotely
-	for (int i = 0; i < clientProxies.size(); ++i)
+	MngSrv.create(gameObject->networkId);
+	/*for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
 			// TODO(jesus): Notify this proxy's replication manager about the creation of this game object
+			MngSrv.create(clientProxy[i])
 		}
-	}
+	}*/
 
 	return gameObject;
 }
@@ -423,13 +440,15 @@ GameObject * ModuleNetworkingServer::spawnBullet(GameObject *parent)
 void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject)
 {
 	// Notify all client proxies' replication manager to destroy the object remotely
-	for (int i = 0; i < clientProxies.size(); ++i)
+	MngSrv.destroy(gameObject->networkId);
+	/*for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
 			// TODO(jesus): Notify this proxy's replication manager about the destruction of this game object
+			MngSrv.destroy(clientProxies[i].clientId);
 		}
-	}
+	}*/
 
 	// Assuming the message was received, unregister the network identity
 	App->modLinkingContext->unregisterNetworkGameObject(gameObject);
@@ -441,13 +460,16 @@ void ModuleNetworkingServer::destroyNetworkObject(GameObject * gameObject)
 void ModuleNetworkingServer::updateNetworkObject(GameObject * gameObject)
 {
 	// Notify all client proxies' replication manager to destroy the object remotely
+	MngSrv.update(gameObject->networkId);
+	/*
 	for (int i = 0; i < clientProxies.size(); ++i)
 	{
 		if (clientProxies[i].connected)
 		{
 			// TODO(jesus): Notify this proxy's replication manager about the update of this game object
+			MngSrv.update(clientProxies[i].gameObject->networkId);
 		}
-	}
+	}*/
 }
 
 
