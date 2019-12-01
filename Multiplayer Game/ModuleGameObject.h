@@ -45,6 +45,11 @@ public:
 		packet << angle;
 	}
 
+	void ReadCreate(const InputMemoryStream& packet)
+	{
+
+	}
+
 	void ReadUpdate(const InputMemoryStream& packet)
 	{
 		packet >> position.x;

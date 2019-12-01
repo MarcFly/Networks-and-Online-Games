@@ -13,15 +13,26 @@ void ReplicationManagerServer::write(OutputMemoryStream &packet)
 		packet << it->first;
 		packet << it->second;
 
-		switch (it->second)
+		GameObject* get = App->modLinkingContext->getNetworkGameObject(it->first);
+
+		if (get != nullptr)
 		{
-		case ReplicationAction::Create:
-			App->modLinkingContext->getNetworkGameObject(it->first)->SerializeCreate(packet);
-			break;
-		case ReplicationAction::Update:
-			GameObject* get = App->modLinkingContext->getNetworkGameObject(it->first);
-			if(get) get->SerializeUpdate(packet);
-			break;
+			packet << ReplicationAction::Success;
+			switch (it->second)
+			{
+			case ReplicationAction::Create:
+				get->SerializeCreate(packet);
+			case ReplicationAction::Update:
+				get->SerializeUpdate(packet);
+				break;
+			case ReplicationAction::Destroy:
+				break;
+			}
 		}
+		else
+		{
+			packet << ReplicationAction::Error;
+		}
+			
 	}
 }

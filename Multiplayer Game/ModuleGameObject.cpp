@@ -88,9 +88,14 @@ GameObject * ModuleGameObject::Instantiate()
 
 void ModuleGameObject::Destroy(GameObject * gameObject)
 {
-	ASSERT(gameObject->networkId == 0); // NOTE(jesus): If it has a network identity, it must be destroyed by the Networking module first
-	
-	gameObject->state = GameObject::DESTROYING;
+	if (gameObject != nullptr)
+	{
+		if (gameObject->networkId != 0)// NOTE(jesus): If it has a network identity, it must be destroyed by the Networking module first
+		{
+			App->modLinkingContext->unregisterNetworkGameObject(gameObject);
+		}
+		gameObject->state = GameObject::DESTROYING;
+	}
 }
 
 GameObject * Instantiate()

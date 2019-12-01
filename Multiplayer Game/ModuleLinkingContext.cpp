@@ -19,7 +19,9 @@ void ModuleLinkingContext::registerNetworkGameObject(GameObject *gameObject)
 
 void ModuleLinkingContext::registerNetworkGameObjectWithNetworkId(GameObject * gameObject, uint32 networkId)
 {
-	uint16 arrayIndex = arrayIndexFromNetworkId(networkId);
+	uint16 arrayIndex = 0;
+	if(networkGameObjects[arrayIndex] != nullptr)
+		arrayIndex = ManualIndexCrt();
 	ASSERT(arrayIndex < MAX_NETWORK_OBJECTS);
 	ASSERT(networkGameObjects[arrayIndex] == nullptr);
 	networkGameObjects[arrayIndex] = gameObject;
@@ -30,7 +32,9 @@ void ModuleLinkingContext::registerNetworkGameObjectWithNetworkId(GameObject * g
 GameObject * ModuleLinkingContext::getNetworkGameObject(uint32 networkId)
 {
 	uint16 arrayIndex = arrayIndexFromNetworkId(networkId);
-	ASSERT(arrayIndex < MAX_NETWORK_OBJECTS);
+	if (networkGameObjects[arrayIndex] == nullptr || networkGameObjects[arrayIndex]->networkId != networkId)
+		arrayIndex = ManualFindIndex(networkId);
+	if (arrayIndex >= MAX_NETWORK_OBJECTS) return nullptr;
 
 	GameObject *gameObject = networkGameObjects[arrayIndex];
 
@@ -38,10 +42,8 @@ GameObject * ModuleLinkingContext::getNetworkGameObject(uint32 networkId)
 	{
 		return gameObject;
 	}
-	else
-	{
-		return nullptr;
-	}
+
+	return nullptr;
 }
 
 void ModuleLinkingContext::getNetworkGameObjects(GameObject * gameObjects[MAX_NETWORK_OBJECTS], uint16 * count)
@@ -66,13 +68,23 @@ uint16 ModuleLinkingContext::getNetworkGameObjectsCount() const
 
 void ModuleLinkingContext::unregisterNetworkGameObject(GameObject *gameObject)
 {
-	uint16 arrayIndex = arrayIndexFromNetworkId(gameObject->networkId);
-	ASSERT(arrayIndex < MAX_NETWORK_OBJECTS);
-	if (networkGameObjects[arrayIndex] == gameObject)
+	if (gameObject != nullptr)
 	{
-		networkGameObjects[arrayIndex] = nullptr;
-		gameObject->networkId = 0;
-		networkGameObjectsCount--;
+		uint16 arrayIndex = arrayIndexFromNetworkId(gameObject->networkId);
+		ASSERT(arrayIndex < MAX_NETWORK_OBJECTS);
+		if (networkGameObjects[arrayIndex] == gameObject)
+		{
+			networkGameObjects[arrayIndex] = nullptr;
+			gameObject->networkId = 0;
+			networkGameObjectsCount--;
+		}
+		else
+		{
+			arrayIndex = ManualFindIndex(gameObject->networkId);
+			networkGameObjects[arrayIndex] = nullptr;
+			gameObject->networkId = 0;
+			networkGameObjectsCount--;
+		}
 	}
 }
 
@@ -100,4 +112,25 @@ uint16 ModuleLinkingContext::arrayIndexFromNetworkId(uint32 networkId)
 {
 	uint16 arrayIndex = networkId & 0xffff;
 	return arrayIndex;
+}
+
+uint16 ModuleLinkingContext::ManualIndexCrt()
+{
+	uint16 ret = 0;
+	while (networkGameObjects[ret] != nullptr)
+		ret++;
+
+	return ret;
+}
+
+uint16 ModuleLinkingContext::ManualFindIndex(uint32 networkId)
+{
+	uint16 ret = 0;
+
+	for (ret = 0; ret < MAX_NETWORK_OBJECTS; ++ret)
+	{
+		if (networkGameObjects[ret] != nullptr && networkGameObjects[ret]->networkId == networkId) break;
+	}
+
+	return ret;
 }

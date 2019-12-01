@@ -40,5 +40,8 @@ private:
 	GameObject *networkGameObjects[MAX_NETWORK_OBJECTS] = {};
 
 	uint16 networkGameObjectsCount = 0;
+
+	uint16 ManualFindIndex(uint32 networkId);
+	uint16 ManualIndexCrt();
 };
 

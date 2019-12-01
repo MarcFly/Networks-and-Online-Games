@@ -9,7 +9,7 @@ enum class ReplicationAction
 	Create,
 	Update,
 	Destroy,
-	RA_MAX
+	Success
 };
 
 
@@ -42,6 +42,8 @@ public:
 		auto it = Commands.find(netID);
 		if (it == Commands.end())
 			Commands.insert(std::pair<uint32, ReplicationAction>(netID, ReplicationAction::Destroy));
+		else
+			it->second = ReplicationAction::Destroy;
 	};
 
 	void write(OutputMemoryStream &packet);
