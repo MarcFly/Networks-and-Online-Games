@@ -363,6 +363,7 @@ GameObject * ModuleNetworkingServer::spawnPlayer(ClientProxy &clientProxy, uint8
 {
 	// Create a new game object with the player properties
 	clientProxy.gameObject = Instantiate();
+	clientProxy.gameObject->player = true;
 	clientProxy.gameObject->size = { 100, 100 };
 	clientProxy.gameObject->angle = 45.0f;
 

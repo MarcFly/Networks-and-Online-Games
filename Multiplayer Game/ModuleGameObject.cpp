@@ -58,6 +58,7 @@ bool ModuleGameObject::update()
 
 bool ModuleGameObject::postUpdate()
 {
+	
 	return true;
 }
 

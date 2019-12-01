@@ -20,6 +20,7 @@ void ReplicationManagerClient::read(const InputMemoryStream &packet)
 			get = App->modGameObject->Instantiate();
 			App->modLinkingContext->registerNetworkGameObjectWithNetworkId(get, netID);
 			get->ReadCreate(packet);
+			Spawn(get);
 			get->ReadUpdate(packet);
 			break;
 		case ReplicationAction::Update:
@@ -30,6 +31,8 @@ void ReplicationManagerClient::read(const InputMemoryStream &packet)
 				get = App->modGameObject->Instantiate();
 				App->modLinkingContext->registerNetworkGameObjectWithNetworkId(get, netID);
 				get->ReadUpdate(packet);
+				Spawn(get);
+				
 			}
 
 			break;
@@ -39,5 +42,26 @@ void ReplicationManagerClient::read(const InputMemoryStream &packet)
 			App->modGameObject->Destroy(get);
 		}
 		--steps;
+	}
+}
+
+void ReplicationManagerClient::Spawn(GameObject* go)
+{
+	if (go->player)
+	{
+		go->texture = App->modResources->spacecraft1;
+		go->collider = App->modCollision->addCollider(ColliderType::Player, go);
+		go->collider->isTrigger = true;
+
+		//go->behaviour = new Spaceship;
+		//go->behaviour->gameObject = go;
+	}
+	else
+	{
+		go->texture = App->modResources->laser;
+		go->collider = App->modCollision->addCollider(ColliderType::Laser, go);
+
+		//go->behaviour = new Laser;
+		//go->behaviour->gameObject = go;
 	}
 }

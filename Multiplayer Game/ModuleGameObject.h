@@ -29,15 +29,17 @@ struct GameObject
 	// Tag for custom usage
 	uint32 tag = 0;
 
+	bool player = false;
 	// GAMEOBJECT MEMORYSTREAM/REPLICATION MANAGEMENT
 public:
 	void SerializeCreate(OutputMemoryStream& packet)
 	{
-
+		packet << player;
 	}
 
 	void SerializeUpdate(OutputMemoryStream& packet)
 	{
+		packet << player;
 		packet << position.x;
 		packet << position.y;
 		packet << size.x;
@@ -47,11 +49,12 @@ public:
 
 	void ReadCreate(const InputMemoryStream& packet)
 	{
-
+		packet >> player;
 	}
 
 	void ReadUpdate(const InputMemoryStream& packet)
 	{
+		packet >> player;
 		packet >> position.x;
 		packet >> position.y;
 		packet >> size.x;
